@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed } from 'vue';
+import { onMounted, onUnmounted, computed, ref } from 'vue';
 import { useDashboardStore } from './stores/useDashboardStore';
 import { dataGenerator } from './services/dataGenerator';
 import { format } from 'date-fns';
@@ -15,9 +15,14 @@ import {
 } from '@phosphor-icons/vue';
 
 const store = useDashboardStore();
+const chartsRef = ref<HTMLDivElement | null>(null);
+const feedHeight = ref('auto');
 
 onMounted(() => {
   dataGenerator.start();
+  if (chartsRef.value) {
+    feedHeight.value = chartsRef.value.offsetHeight + 'px';
+  }
 });
 
 onUnmounted(() => {
@@ -199,9 +204,14 @@ const threatRadarOptions = computed(() => ({
       </div>
 
       <!-- Main Analytics Grid -->
+      <!-- 
+        KEY CHANGE: 
+        - `items-start` → `items-stretch` so both columns share the same height
+        - Activity feed wrapper uses `h-full` instead of fixed `h-[724px]`
+      -->
       <div class="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
         <!-- Multi-Domain Charts -->
-        <div class="xl:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div ref="chartsRef" class="xl:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
           <RealTimeChart title="Financial: Market Volatility (BTC)" :options="stockOptions" height="350px" />
           <RealTimeChart title="IoT: Environmental Telemetry" :options="sensorOptions" height="350px" />
           <RealTimeChart title="Compute: Resource History" :options="usageOptions" height="350px" />
@@ -209,7 +219,7 @@ const threatRadarOptions = computed(() => ({
         </div>
 
         <!-- Unified Activity Feed (Vertical Paged) -->
-        <div class="xl:col-span-4 flex flex-col h-[724px]">
+        <div class="xl:col-span-4 flex flex-col" :style="{ height: feedHeight }">
           <ActivityFeed :events="store.events" class="flex-grow" />
         </div>
       </div>
